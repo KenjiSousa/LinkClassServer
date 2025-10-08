@@ -1,0 +1,19 @@
+incluir campos para tabela evento e tratar controller, service e repo.
+  █Logradouro
+  █Número
+  █Palestrante/orador/professor
+  █Tema
+  Bairro
+  Município
+  Estado
+validar comprimento dos campos (low)
+█Inserir restraint unique para presença entre usuario e evento
+  █Validar se não dá pra incluir mais de uma vez
+  █Tratar exceção caso o usuário tente fazer isso (http 409)
+█acabar de migrar interfaces para arquivo dedicado, parei em presenca.
+  █Ver se tem como migrar os types tbm
+  █Validar os enums
+█simplificar concatFiltro (validação do valor not null pode ser feito dentro do método)
+█data YY-MM-DD não valida e dá erro interno
+█testar o que ocorre quando o caller não informa um campo
+ApiError não deveria ser usado em Repo
