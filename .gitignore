@@ -1,0 +1,17 @@
+# Variáveis de ambiente
+.env
+.env.*
+!.env.exemplo
+
+# Dependências
+/node_modules
+
+# Resultado do build
+/dist
+
+# Cobertura de testes
+/coverage
+
+/logs
+
+/.vscode

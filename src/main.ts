@@ -4,6 +4,7 @@ import { authenticateJWT } from "#auth/authenticateJWT.js";
 import { configureDB } from "#infrastructure/configureDB.js";
 import { log } from "#logger.js";
 import loginController from "#controller/loginController.js";
+import palestranteController from "#controller/palestranteController.js";
 import eventoController from "#controller/eventoController.js";
 import presencaController from "#controller/presencaController.js";
 import presencaLinkController from "#controller/presencaLinkController.js";
@@ -14,6 +15,7 @@ await configureDB();
 const router = express.Router();
 
 router.use("/login", loginController);
+router.use("/palestrante", authenticateJWT, palestranteController);
 router.use("/evento", authenticateJWT, eventoController);
 router.use("/presenca", authenticateJWT, presencaController);
 router.use("/presenca-link", authenticateJWT, presencaLinkController);

@@ -1,12 +1,19 @@
 import { EventoDB } from "#dbTypes/eventoDB.js";
-import { dateToString, execute } from "#util/dbUtils.js";
+import {
+  Connection,
+  dateToString,
+  execute,
+  getConnection,
+} from "#util/dbUtils.js";
 import { Evento } from "#model/evento.js";
 import { EventoStatus } from "#dbTypes/eventoStatus.js";
 import { InsertResult } from "#interfaces/dbInterfaces.js";
+import * as EventoPalestranteRepo from "#repository/eventoPalestranteRepo.js";
+import { Palestrante } from "#model/palestrante.js";
 
 const SCHEMA = process.env.DB_SCHEMA;
 
-const constructEvento = (rows: EventoDB[]): Evento | null => {
+async function constructEvento(rows: EventoDB[]): Promise<Evento | null> {
   if (!rows || rows.length === 0) return null;
 
   const evento = new Evento(
@@ -16,7 +23,7 @@ const constructEvento = (rows: EventoDB[]): Evento | null => {
     rows[0].hr_fim!,
     rows[0].logradouro!,
     rows[0].numero,
-    rows[0].orador!,
+    await EventoPalestranteRepo.getPalestrantesByIdEvento(rows[0]["id"]!),
     rows[0].tema!,
     rows[0].status!,
     rows[0].obs!,
@@ -25,61 +32,64 @@ const constructEvento = (rows: EventoDB[]): Evento | null => {
   evento.id = rows[0]["id"];
 
   return evento;
-};
+}
 
-const constructEventoList = (rows: EventoDB[]): Evento[] => {
+async function constructEventoList(rows: EventoDB[]): Promise<Evento[]> {
   if (!rows || rows.length === 0) return [];
 
-  const eventos: Evento[] = [];
-
-  for (const row of rows) {
-    const evento = new Evento(
-      row.nome!,
-      row.data!,
-      row.hr_ini!,
-      row.hr_fim!,
-      rows[0].logradouro!,
-      rows[0].numero,
-      rows[0].orador!,
-      rows[0].tema!,
-      row.status!,
-      row.obs,
-    );
-
-    evento.id = row.id;
-
-    eventos.push(evento);
-  }
-
-  return eventos;
-};
-
-export const insereEvento = async (evento: Evento) => {
-  const result = await execute<InsertResult>(
-    `insert into ${SCHEMA}.evento(` +
-      `id, nome, data, hr_ini, hr_fim, logradouro, numero, orador, tema,` +
-      `status, obs)` +
-      ` values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      evento.id,
-      evento.nome,
-      dateToString(evento.data!),
-      evento.hrIni,
-      evento.hrFim,
-      evento.logradouro,
-      evento.numero,
-      evento.orador,
-      evento.tema,
-      evento.status,
-      evento.obs,
-    ],
+  const eventos: Evento[] = await Promise.all(
+    rows.map(async (row) => (await constructEvento([row]))!),
   );
 
-  evento.id = result.insertId;
+  return eventos;
+}
+
+export const insereEvento = async (evento: Evento) => {
+  const conn: Connection = await getConnection();
+
+  await conn.beginTransaction();
+
+  try {
+    const result = await conn.execute<InsertResult>(
+      `insert into ${SCHEMA}.evento(` +
+        `nome, data, hr_ini, hr_fim, logradouro, numero, tema, status, obs)` +
+        ` values (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        evento.nome,
+        dateToString(evento.data!),
+        evento.hrIni,
+        evento.hrFim,
+        evento.logradouro,
+        evento.numero,
+        evento.tema,
+        evento.status,
+        evento.obs,
+      ],
+    );
+
+    evento.id = result.insertId;
+
+    const idsPalestrantes: number[] = evento.palestrantes.map(
+      (palestrante) => palestrante.id!,
+    );
+
+    await EventoPalestranteRepo.insertEventoPalestrante(
+      conn,
+      evento.id!,
+      idsPalestrantes,
+    );
+
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.close();
+  }
 };
 
 export const getEventoById = async (id: number) => {
-  return constructEvento(
+  return await constructEvento(
     await execute<EventoDB[]>(`select * from ${SCHEMA}.evento where id = ?`, [
       id,
     ]),
@@ -92,65 +102,103 @@ export const consultaEventos = async (
   data_fim?: string,
   logradouro?: string,
   numero?: string,
-  orador?: string,
+  palestrante?: string,
   tema?: string,
   status?: EventoStatus,
   obs?: string,
 ): Promise<Evento[]> => {
-  let filtro = "";
+  let filtro: string = "";
   const values: any[] = [];
 
-  function concatFiltro(valor: any, condicao: string) {
+  function concatFiltro(valor: string | undefined, condicao: string): void {
     if (valor) {
       filtro += (filtro ? " and " : " where ") + condicao;
       values.push(valor);
     }
   }
 
-  concatFiltro(nome, "upper(nome) like concat('%', upper(?), '%')");
-  concatFiltro(data_ini, "data >= ?");
-  concatFiltro(data_fim, "data <= ?");
-  concatFiltro(logradouro, "logradouro like concat('%', upper(?), '%')");
-  concatFiltro(numero, "numero like concat('%', upper(?), '%')");
-  concatFiltro(orador, "orador like concat('%', upper(?), '%')");
-  concatFiltro(tema, "tema like concat('%', upper(?), '%')");
-  concatFiltro(status, "status = ?");
-  concatFiltro(obs, "upper(obs) like concat('%', upper(?), '%')");
+  concatFiltro(
+    palestrante,
+    `exists (select 1 from ${SCHEMA}.evento_palestrante ep` +
+      ` join ${SCHEMA}.palestrante p on ep.id_palestrante = p.id` +
+      ` where e.id = ep.id_evento` +
+      ` and upper(p.nome) like concat('%', upper(?), '%'))`,
+  );
+  concatFiltro(nome, "upper(e.nome) like concat('%', upper(?), '%')");
+  concatFiltro(data_ini, "e.data >= ?");
+  concatFiltro(data_fim, "e.data <= ?");
+  concatFiltro(
+    logradouro,
+    "upper(e.logradouro) like concat('%', upper(?), '%')",
+  );
+  concatFiltro(numero, "upper(e.numero) like concat('%', upper(?), '%')");
+  concatFiltro(tema, "e.tema like concat('%', upper(?), '%')");
+  concatFiltro(status, "e.status = ?");
+  concatFiltro(obs, "upper(e.obs) like concat('%', upper(?), '%')");
 
   const result = await execute<EventoDB[]>(
-    `select * from ${SCHEMA}.evento${filtro}`,
+    `select e.* from ${SCHEMA}.evento e${filtro}`,
     values,
   );
 
   return constructEventoList(result);
 };
 
-export const updateEvento = async (evento: Evento) => {
-  await execute(
-    `update ${SCHEMA}.evento` +
-      ` set nome = ?,` +
-      ` data = ?,` +
-      ` hr_ini = ?,` +
-      ` hr_fim = ?,` +
-      ` logradouro = ?,` +
-      ` numero = ?,` +
-      ` orador = ?,` +
-      ` tema = ?,` +
-      ` status = ?,` +
-      ` obs = ?` +
-      ` where id = ?`,
-    [
-      evento.nome,
-      dateToString(evento.data),
-      evento.hrIni,
-      evento.hrFim,
-      evento.logradouro,
-      evento.numero,
-      evento.orador,
-      evento.tema,
-      evento.status,
-      evento.obs,
-      evento.id,
-    ],
-  );
+export const updateEvento = async (
+  evento: Evento,
+  palestrantesIdsNew: number[],
+) => {
+  const conn = await getConnection();
+
+  await conn.beginTransaction();
+
+  try {
+    await conn.execute(
+      `update ${SCHEMA}.evento` +
+        ` set nome = ?,` +
+        ` data = ?,` +
+        ` hr_ini = ?,` +
+        ` hr_fim = ?,` +
+        ` logradouro = ?,` +
+        ` numero = ?,` +
+        ` tema = ?,` +
+        ` status = ?,` +
+        ` obs = ?` +
+        ` where id = ?`,
+      [
+        evento.nome,
+        dateToString(evento.data),
+        evento.hrIni,
+        evento.hrFim,
+        evento.logradouro,
+        evento.numero,
+        evento.tema,
+        evento.status,
+        evento.obs,
+        evento.id,
+      ],
+    );
+
+    const palestrantesIdsOld: number[] = (
+      await EventoPalestranteRepo.getPalestrantesByIdEvento(evento.id!)
+    ).map((palestrante) => palestrante.id!);
+
+    await EventoPalestranteRepo.deleteEventoPalestrante(
+      conn,
+      evento.id!,
+      palestrantesIdsOld.filter((id) => !palestrantesIdsNew.includes(id)),
+    );
+    await EventoPalestranteRepo.insertEventoPalestrante(
+      conn,
+      evento.id!,
+      palestrantesIdsNew.filter((id) => !palestrantesIdsOld.includes(id)),
+    );
+
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.close();
+  }
 };

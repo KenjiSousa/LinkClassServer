@@ -1,6 +1,7 @@
-import { dateToString, truncDate } from "#util/dbUtils.js";
-import { Evento } from "#model/evento.js";
 import { EventoStatus } from "#dbTypes/eventoStatus.js";
+import { Evento } from "#model/evento.js";
+import { Palestrante } from "#model/palestrante.js";
+import { dateToString, truncDate } from "#util/dbUtils.js";
 
 export class EventoDTO {
   id?: number;
@@ -10,7 +11,7 @@ export class EventoDTO {
   hr_fim?: string;
   logradouro?: string;
   numero?: string;
-  orador?: string;
+  palestrantes?: Palestrante[];
   tema?: string;
   status?: EventoStatus;
   obs?: string;
@@ -23,7 +24,7 @@ export class EventoDTO {
     this.hr_fim = evento.hrFim.slice(0, 5);
     this.logradouro = evento.logradouro;
     this.numero = evento.numero;
-    this.orador = evento.orador;
+    this.palestrantes = evento.palestrantes;
     this.tema = evento.tema;
     this.status = evento.status;
     this.obs = evento.obs;

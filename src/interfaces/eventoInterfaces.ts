@@ -7,7 +7,7 @@ export interface EventoInsertRequestBody {
   hr_fim?: string;
   logradouro?: string;
   numero?: string;
-  orador?: string;
+  palestrantes?: number[];
   tema?: string;
   status?: string;
   obs?: string;
@@ -22,7 +22,7 @@ export interface EventoSelectRequestQuery {
   data_fim?: string;
   logradouro?: string;
   numero?: string;
-  orador?: string;
+  palestrante?: string;
   tema?: string;
   status?: string;
   obs?: string;
@@ -42,7 +42,7 @@ export interface EventoUpdateRequestBody {
   hr_fim?: string;
   logradouro?: string;
   numero?: string;
-  orador?: string;
+  palestrantes?: number[];
   tema?: string;
   status?: string;
   obs?: string;

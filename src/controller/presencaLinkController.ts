@@ -25,6 +25,8 @@ router.get(
       return res.status(400).json({ message: "ID do evento é obrigatório" });
     }
 
+    await EventoService.getEventoById(id_evento); // Verifica se o evento existe
+
     const timestamp = Math.floor(Date.now() / 1000); // Timestamp atual em segundos
     const data = `${id_evento}:${timestamp}:${SECRET_SALT}`;
     const hash = createHash("sha256").update(data).digest("hex");
@@ -49,17 +51,8 @@ router.get("/verify", async (req: PresencaLinkVerifyRequest, res) => {
   }
 
   const usuario = await UsuarioService.getUsuarioByEmail(req.usuario!.email);
-  if (!usuario)
-    throw new ApiError(
-      400,
-      `Usuário de e-mail ${req.usuario!.email} não encontrado`,
-    );
-
   const eventoId = hashStore.get(hash)!.eventoId;
   const evento = await EventoService.getEventoById(eventoId);
-  if (!evento)
-    throw new ApiError(400, `Evento de id ${eventoId} não encontrado`);
-
   const presenca = new Presenca(usuario, evento);
 
   try {
@@ -68,7 +61,7 @@ router.get("/verify", async (req: PresencaLinkVerifyRequest, res) => {
     if (err.code === "ER_DUP_ENTRY") {
       throw new ApiError(
         409,
-        `Já existe um registro de presença para o usuário ${req.usuario!.email} e evento ${eventoId}`,
+        `Já existe um registro de presença para o usuário de e-mail ${req.usuario!.email} e evento ${eventoId}`,
       );
     }
 

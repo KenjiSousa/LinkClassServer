@@ -1,79 +1,51 @@
 import { PresencaDB } from "#dbTypes/presencaDB.js";
 import { execute } from "#util/dbUtils.js";
 import { Presenca } from "#model/presenca.js";
-import { ApiError } from "#error/apiError.js";
-import { getUsuarioByEmail } from "#service/usuarioService.js";
-import { getEventoById } from "#service/eventoService.js";
+import * as UsuarioService from "#service/usuarioService.js";
+import * as EventoService from "#service/eventoService.js";
 import { InsertResult } from "#interfaces/dbInterfaces.js";
 
-const SCHEMA = process.env.DB_SCHEMA;
+const SCHEMA: string = process.env.DB_SCHEMA ?? "linkclass";
 
-const constructPresenca = async (
-  rows: PresencaDB[],
-): Promise<Presenca | null> => {
+async function constructPresenca(rows: PresencaDB[]): Promise<Presenca | null> {
   if (!rows || rows.length === 0) return null;
 
-  const usuario = await getUsuarioByEmail(rows[0].email_usuario);
-  if (!usuario)
-    throw new ApiError(
-      400,
-      `Usuário de id ${rows[0].email_usuario} não encontrado`,
-    );
+  const usuario = await UsuarioService.getUsuarioByEmail(rows[0].email_usuario);
 
-  const evento = await getEventoById(rows[0].id_evento);
-  if (!evento)
-    throw new ApiError(400, `Evento de id ${rows[0].id_evento} não encontrado`);
+  const evento = await EventoService.getEventoById(rows[0].id_evento);
 
   const presenca = new Presenca(usuario, evento);
   presenca.id = rows[0].id;
 
   return presenca;
-};
+}
 
-const constructPresencaList = async (
-  rows: PresencaDB[],
-): Promise<Presenca[]> => {
+async function constructPresencaList(rows: PresencaDB[]): Promise<Presenca[]> {
   if (!rows || rows.length === 0) return [];
 
-  const presencas: Presenca[] = [];
-
-  for (const row of rows) {
-    const usuario = await getUsuarioByEmail(row.email_usuario);
-    if (!usuario)
-      throw new ApiError(
-        400,
-        `Usuário de id ${row.email_usuario} não encontrado`,
-      );
-
-    const evento = await getEventoById(row.id_evento);
-    if (!evento)
-      throw new ApiError(400, `Evento de id ${row.id_evento} não encontrado`);
-
-    const presenca = new Presenca(usuario, evento);
-    presenca.id = row.id;
-
-    presencas.push(presenca);
-  }
+  const presencas: Presenca[] = await Promise.all(
+    rows.map(async (row) => (await constructPresenca([row]))!),
+  );
 
   return presencas;
-};
+}
 
-export const inserePresenca = async (presenca: Presenca) => {
+export async function inserePresenca(presenca: Presenca): Promise<void> {
   const result = await execute<InsertResult>(
-    `insert into ${SCHEMA}.presenca(id, id_usuario, id_evento)` +
-      ` values (?, ?, ?)`,
-    [presenca.id, presenca.usuario.email, presenca.evento.id],
+    `insert into ${SCHEMA}.presenca(email_usuario, id_evento)` +
+      ` values (?, ?)`,
+    [presenca.usuario.email, presenca.evento.id!],
   );
 
   presenca.id = result.insertId;
-};
+}
 
-export const getPresencaByIdAndUserEmail = async (
+export async function getPresencaByIdAndUserEmail(
   id: number,
   email?: string,
-) => {
-  let filtro = "";
-  const values: any[] = [id];
+): Promise<Presenca | null> {
+  let filtro: string = "";
+  const values: (number | string)[] = [id];
 
   if (email) {
     filtro = " and email_usuario = ?";
@@ -86,22 +58,36 @@ export const getPresencaByIdAndUserEmail = async (
       values,
     ),
   );
-};
+}
 
-export const consultaPresencas = async (
+export async function getPresencaById(id: number): Promise<Presenca | null> {
+  let filtro: string = "";
+
+  return await constructPresenca(
+    await execute<PresencaDB[]>(
+      `select * from ${SCHEMA}.presenca where id = ?${filtro}`,
+      [id],
+    ),
+  );
+}
+
+export async function consultaPresencas(
   email_usuario?: string,
   id_evento?: number,
   nome_evento?: string,
-): Promise<Presenca[]> => {
+): Promise<Presenca[]> {
   let filtro = "";
-  const values: any[] = [];
+  const values: (number | string)[] = [];
 
-  const concatFiltro = (valor: any, condicao: string) => {
+  function concatFiltro(
+    valor: number | string | undefined,
+    condicao: string,
+  ): void {
     if (valor) {
       filtro += (filtro ? " and " : " where ") + condicao;
       values.push(valor);
     }
-  };
+  }
 
   concatFiltro(email_usuario, "p.email_usuario = ?");
   concatFiltro(id_evento, "p.id_evento = ?");
@@ -116,4 +102,4 @@ export const consultaPresencas = async (
   );
 
   return await constructPresencaList(result);
-};
+}

@@ -1,9 +1,15 @@
 import { ApiError } from "#error/apiError.js";
 import { DupVal } from "#error/repoError.js";
+import { Usuario } from "#model/usuario.js";
 import * as UsuarioRepo from "#repository/usuarioRepo.js";
 
-export async function getUsuarioByEmail(email: string) {
-  return await UsuarioRepo.getUsuarioByEmail(email);
+export async function getUsuarioByEmail(email: string): Promise<Usuario> {
+  const usuario: Usuario | null = await UsuarioRepo.getUsuarioByEmail(email);
+
+  if (!usuario)
+    throw new ApiError(404, `Usuário de e-mail ${email} não encontrado`);
+
+  return usuario;
 }
 
 export async function getUsuarioByDeviceId(deviceId: string) {

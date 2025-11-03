@@ -8,7 +8,7 @@ export class EventoDB {
   hr_fim?: string;
   logradouro?: string;
   numero?: string;
-  orador?: string;
+  palestrante?: string;
   tema?: string;
   status?: EventoStatus;
   obs?: string;
@@ -20,7 +20,7 @@ export class EventoDB {
     hr_fim?: string,
     logradouro?: string,
     numero?: string,
-    orador?: string,
+    palestrante?: string,
     tema?: string,
     status?: EventoStatus,
     obs?: string,
@@ -31,7 +31,7 @@ export class EventoDB {
     this.hr_fim = hr_fim;
     this.logradouro = logradouro;
     this.numero = numero;
-    this.orador = orador;
+    this.palestrante = palestrante;
     this.tema = tema;
     this.status = status;
     this.obs = obs;

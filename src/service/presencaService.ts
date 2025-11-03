@@ -10,10 +10,11 @@ import {
   PresencaSelectRequestQuery,
 } from "#interfaces/presencaInterfaces.js";
 import { CamposErro } from "#interfaces/errorInterfaces.js";
+import { UsuarioDTO } from "#dto/usuarioDTO.js";
 
-export const inserePresenca = async (
+export async function inserePresenca(
   body: PresencaInsertRequestBody,
-): Promise<Presenca> => {
+): Promise<Presenca> {
   const { email_usuario, id_evento } = body;
 
   {
@@ -23,7 +24,7 @@ export const inserePresenca = async (
       email_usuario,
       campos,
       "email_usuario",
-      "ID do usuário é obrigatório",
+      "E-mail do usuário é obrigatório",
     );
     assertNotEmpty(
       id_evento,
@@ -36,34 +37,51 @@ export const inserePresenca = async (
   }
 
   const usuario = await getUsuarioByEmail(email_usuario!);
-  if (!usuario)
-    throw new ApiError(
-      404,
-      `Usuário de e-mail ${email_usuario} não encontrado`,
-    );
-
   const evento = await getEventoById(id_evento!);
-  if (!evento)
-    throw new ApiError(404, `Evento de id ${id_evento} não encontrado`);
-
   const presenca = new Presenca(usuario, evento);
 
   await PresencaRepo.inserePresenca(presenca);
 
   return presenca;
-};
+}
 
-export const getPresencaByIdAndUserEmail = async (
+export async function getPresencaByIdAndUserEmail(
   id: number,
   userEmail?: string,
-): Promise<Presenca | null> => {
-  return await PresencaRepo.getPresencaByIdAndUserEmail(id, userEmail);
-};
+): Promise<Presenca> {
+  const presenca = await PresencaRepo.getPresencaByIdAndUserEmail(
+    id,
+    userEmail,
+  );
 
-export const consultaPresencas = async (
+  if (!presenca) {
+    throw new ApiError(
+      404,
+      `Presença de id ${id} e e-mail ${userEmail} não encontrada`,
+    );
+  }
+
+  return presenca;
+}
+
+export async function getPresencaById(id: number): Promise<Presenca> {
+  const presenca = await PresencaRepo.getPresencaById(id);
+
+  if (!presenca) {
+    throw new ApiError(404, `Presença de id ${id} não encontrada`);
+  }
+
+  return presenca;
+}
+
+export async function consultaPresencas(
   query: PresencaSelectRequestQuery,
-): Promise<PresencaDTO[]> => {
-  const { email_usuario, id_evento, nome_evento } = query;
+  usuario_sessao?: UsuarioDTO,
+): Promise<PresencaDTO[]> {
+  const { id_evento, nome_evento } = query;
+  const email_usuario: string | undefined =
+    (usuario_sessao?.papel === "aluno" ? usuario_sessao.email : undefined) ||
+    query.email_usuario;
 
   const presencas = await PresencaRepo.consultaPresencas(
     email_usuario,
@@ -71,11 +89,9 @@ export const consultaPresencas = async (
     nome_evento,
   );
 
-  const presencasDto: PresencaDTO[] = [];
-
-  for (const presenca of presencas) {
-    presencasDto.push(new PresencaDTO(presenca));
-  }
+  const presencasDto: PresencaDTO[] = presencas.map(
+    (presenca) => new PresencaDTO(presenca),
+  );
 
   return presencasDto;
-};
+}

@@ -1,47 +1,61 @@
 import { ApiError } from "#error/apiError.js";
 import { CamposErro } from "#interfaces/errorInterfaces.js";
-import { assertNotBlank, validaCampos } from "#util/assertion.js";
+import { assertNotEmpty, validaCampos } from "#util/assertion.js";
 import { LoginTicket, OAuth2Client } from "google-auth-library";
 import * as UsuarioService from "#service/usuarioService.js";
+import { Usuario } from "#model/usuario.js";
+import { UserPayload } from "#interfaces/authInterfaces.js";
 
-async function validaLoginDispositivo(email: string, deviceId: string) {
-  const usuarioByEmail = await UsuarioService.getUsuarioByEmail(email);
+async function getUsuarioByEmailAndDeviceId(
+  email: string,
+  deviceId: string,
+): Promise<Usuario> {
+  let usuarioByEmail: Usuario | null = null;
 
-  if (!usuarioByEmail) {
-    UsuarioService.insereUsuario(email, deviceId);
-
-    return;
+  try {
+    usuarioByEmail = await UsuarioService.getUsuarioByEmail(email);
+  } catch (err) {
+    if (!(err instanceof ApiError) || err.statusCode !== 404) {
+      throw err;
+    }
   }
 
-  const usuarioByDeviceId = await UsuarioService.getUsuarioByDeviceId(deviceId);
+  const usuarioByDeviceId: Usuario | null =
+    await UsuarioService.getUsuarioByDeviceId(deviceId);
 
-  if (!usuarioByDeviceId || usuarioByDeviceId!.email !== usuarioByEmail.email) {
+  if (!usuarioByEmail && !usuarioByDeviceId) {
+    await UsuarioService.insereUsuario(email, deviceId);
+
+    return await UsuarioService.getUsuarioByEmail(email);
+  } else if (usuarioByEmail && usuarioByEmail.deviceId !== deviceId) {
+    throw new ApiError(
+      409,
+      "Já existe outro dispositivo ligado a esta conta. Solicite a ajuda de um administrador para prosseguir.",
+    );
+  } else if (usuarioByDeviceId && usuarioByDeviceId.email !== email) {
     throw new ApiError(
       409,
       "Já existe outra conta ligado a este dispositivo. Solicite a ajuda de um administrador para prosseguir.",
     );
   }
+
+  return usuarioByEmail!;
 }
 
 export async function login(
   idToken: string | undefined,
   deviceId: string | undefined,
-) {
-  console.log(deviceId);
-
+): Promise<UserPayload> {
   {
     const campos: CamposErro = {};
 
-    assertNotBlank(idToken, campos, "idToken", "idToken é obrigatório");
-    assertNotBlank(deviceId, campos, "deviceId", "deviceId é obrigatório");
+    assertNotEmpty(idToken, campos, "idToken", "idToken é obrigatório");
+    assertNotEmpty(deviceId, campos, "deviceId", "deviceId é obrigatório");
 
     validaCampos(campos);
   }
 
-  console.log(`deviceId: ${deviceId}`);
-
-  const CLIENT_ID =
-    "42851321777-1tpjtassb4vqfkp61stv6287flq6iejl.apps.googleusercontent.com";
+  const CLIENT_ID = process.env.GOOGLE_WEB_CLIENT_ID;
   const client = new OAuth2Client(CLIENT_ID);
 
   let ticket: LoginTicket;
@@ -55,16 +69,16 @@ export async function login(
     throw new ApiError(401, "idToken inválido");
   }
 
-  const payload = ticket.getPayload();
-
-  console.log(`hd: ${payload?.hd}`);
-  console.log(`email: ${payload?.email}`);
+  const payload: UserPayload | undefined = ticket.getPayload() as UserPayload;
 
   if (payload?.hd !== "edu.unipar.br") {
     throw new ApiError(403, "Domínio inválido de e-mail");
   }
 
-  await validaLoginDispositivo(payload.email!, deviceId!);
+  const usuario = await getUsuarioByEmailAndDeviceId(payload.email!, deviceId!);
+
+  payload.deviceId = usuario.deviceId;
+  payload.papel = usuario.papel;
 
   return payload;
 }

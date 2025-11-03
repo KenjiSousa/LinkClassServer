@@ -7,8 +7,9 @@ import {
 } from "#util/dbUtils.js";
 import { Evento } from "#model/evento.js";
 import * as EventoRepo from "#repository/eventoRepo.js";
+import * as PalestranteService from "#service/palestranteService.js";
 import {
-  assertNotBlank,
+  assertArrayNotNull,
   assertNotEmpty,
   assertTrue,
   assertValidDateStr,
@@ -23,12 +24,13 @@ import {
   EventoUpdateRequestBody,
 } from "#interfaces/eventoInterfaces.js";
 import { CamposErro } from "#interfaces/errorInterfaces.js";
+import { Palestrante } from "#model/palestrante.js";
 
 function validaStatus(
   status: string | undefined,
   campos: CamposErro,
   nomeCampo: string,
-): status is EventoStatus | undefined {
+): status is EventoStatus {
   if (!status) return false;
 
   return assertTrue(
@@ -39,9 +41,9 @@ function validaStatus(
   );
 }
 
-export const insereEvento = async (
+export async function insereEvento(
   body: EventoInsertRequestBody,
-): Promise<Evento> => {
+): Promise<Evento> {
   const {
     nome,
     data,
@@ -49,7 +51,7 @@ export const insereEvento = async (
     hr_fim,
     logradouro,
     numero,
-    orador,
+    palestrantes,
     tema,
     status,
     obs,
@@ -104,7 +106,23 @@ export const insereEvento = async (
       "logradouro",
       "Logradouro é obrigatório",
     );
-    assertNotEmpty(orador, campos, "orador", "Orador é obrigatório");
+
+    if (
+      assertArrayNotNull(
+        palestrantes,
+        campos,
+        "palestrantes",
+        "Lista de palestrantes é obrigatória",
+      )
+    ) {
+      assertTrue(
+        palestrantes.length > 0,
+        campos,
+        "palestrantes",
+        "Lista de palestrantes não pode estar vazia",
+      );
+    }
+
     assertNotEmpty(tema, campos, "tema", "Tema é obrigatório");
 
     if (assertNotEmpty(status, campos, "status", "Status é obrigatório")) {
@@ -114,6 +132,9 @@ export const insereEvento = async (
     validaCampos(campos);
   }
 
+  const listaPalestrantes: Palestrante[] =
+    await PalestranteService.getPalestrantesByIds(palestrantes!);
+
   const evento = new Evento(
     nome!,
     localDateFromString(data!),
@@ -121,7 +142,7 @@ export const insereEvento = async (
     hr_fim!,
     logradouro!,
     numero,
-    orador!,
+    listaPalestrantes,
     tema!,
     status as EventoStatus,
     obs,
@@ -130,22 +151,26 @@ export const insereEvento = async (
   await EventoRepo.insereEvento(evento);
 
   return evento;
-};
+}
 
-export const getEventoById = async (id: number): Promise<Evento | null> => {
-  return await EventoRepo.getEventoById(id);
-};
+export async function getEventoById(id: number): Promise<Evento> {
+  const evento = await EventoRepo.getEventoById(id);
 
-export const consultaEventos = async (
+  if (!evento) throw new ApiError(404, `Evento de id ${id} não encontrado`);
+
+  return evento;
+}
+
+export async function consultaEventos(
   query: EventoSelectRequestQuery,
-): Promise<EventoDTO[]> => {
+): Promise<EventoDTO[]> {
   const {
     nome,
     data_ini,
     data_fim,
     logradouro,
     numero,
-    orador,
+    palestrante,
     tema,
     status,
     obs,
@@ -165,25 +190,21 @@ export const consultaEventos = async (
     data_fim,
     logradouro,
     numero,
-    orador,
+    palestrante,
     tema,
     status as EventoStatus | undefined,
     obs,
   );
 
-  let eventosDto: EventoDTO[] = [];
-
-  for (const evento of eventos) {
-    eventosDto.push(new EventoDTO(evento));
-  }
+  let eventosDto: EventoDTO[] = eventos.map((evento) => new EventoDTO(evento));
 
   return eventosDto;
-};
+}
 
-export const updateEvento = async (
+export async function updateEvento(
   id: number,
   body: EventoUpdateRequestBody,
-) => {
+): Promise<void> {
   const {
     nome,
     data,
@@ -191,15 +212,13 @@ export const updateEvento = async (
     hr_fim,
     logradouro,
     numero,
-    orador,
+    palestrantes,
     tema,
     status,
     obs,
   } = body;
 
-  const eventoOld = await EventoRepo.getEventoById(id);
-
-  if (!eventoOld) throw new ApiError(404, `Evento de id ${id} não encontrado`);
+  const eventoOld = await getEventoById(id);
 
   const dataHoraOld = localDateTimeFromString(
     `${dateToString(eventoOld.data)} ${eventoOld.hrIni.slice(0, 5)}`,
@@ -218,7 +237,7 @@ export const updateEvento = async (
     const campos: CamposErro = {};
 
     eventoNew.nome = nome ?? eventoOld.nome;
-    assertNotBlank(eventoNew.nome, campos, "nome", "Nome não deve estar vazio");
+    assertNotEmpty(eventoNew.nome, campos, "nome", "Nome não deve estar vazio");
 
     if (data) {
       if (assertValidDateStr(data, campos, "data", "Data inválida")) {
@@ -261,7 +280,6 @@ export const updateEvento = async (
 
     eventoNew.logradouro = logradouro ?? eventoOld.logradouro;
     eventoNew.numero = numero ?? eventoOld.numero;
-    eventoNew.orador = orador ?? eventoOld.orador;
     eventoNew.tema = tema ?? eventoOld.tema;
     assertNotEmpty(
       eventoNew.logradouro,
@@ -269,10 +287,26 @@ export const updateEvento = async (
       "logradouro",
       "Logradouro é obrigatório",
     );
-    assertNotEmpty(eventoNew.orador, campos, "orador", "Orador é obrigatório");
+
+    if (
+      assertArrayNotNull(
+        palestrantes,
+        campos,
+        "palestrantes",
+        "Lista de palestrantes é obrigatória",
+      )
+    ) {
+      assertTrue(
+        palestrantes.length > 0,
+        campos,
+        "palestrantes",
+        "Lista de palestrantes não pode estar vazia",
+      );
+    }
+
     assertNotEmpty(eventoNew.tema, campos, "tema", "Tema é obrigatório");
 
-    if (status) {
+    if (assertNotEmpty(status, campos, "status", "Status é obrigatório")) {
       if (validaStatus(status, campos, "status")) {
         eventoNew.status = status;
 
@@ -292,5 +326,5 @@ export const updateEvento = async (
 
   eventoNew.obs = obs;
 
-  return await EventoRepo.updateEvento(eventoNew);
-};
+  return await EventoRepo.updateEvento(eventoNew, palestrantes!);
+}

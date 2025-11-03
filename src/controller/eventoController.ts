@@ -25,9 +25,6 @@ router.get("/:id", async (req, res) => {
 
   const evento = await EventoService.getEventoById(Number(id));
 
-  if (!evento)
-    return res.status(404).json({ message: "Evento não encontrado" });
-
   return res.json(new EventoDTO(evento));
 });
 

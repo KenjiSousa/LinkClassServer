@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Projeto para servidor em Node para o LinkClass.",
   "scripts": {
-    "dev": "npm run format && npm run build & tsx --env-file .env.dev src/main.ts",
+    "dev": "npm run format-silent && npm run build & tsx --env-file .env.dev src/main.ts",
     "start": "md logs 2> nul & node --env-file .env.prod dist/main.js > \"logs/log%date:~-4%-%date:~3,2%-%date:~0,2% %time:~0,2%-%time:~3,2%-%time:~6,2%.txt\"",
     "build": "tsc",
     "test": "vitest",
@@ -14,6 +14,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "format": "prettier --write .",
+    "format-silent": "prettier --log-level silent --write .",
     "format:check": "prettier --check ."
   },
   "keywords": [],

@@ -8,28 +8,7 @@ export function assertNotEmpty<T>(
   nomeCampo: string,
   message: string,
 ): s is T {
-  if (!s) {
-    camposErro[nomeCampo] = message;
-
-    return false;
-  }
-
-  if (s instanceof String && s.trim() === "") {
-    camposErro[nomeCampo] = message;
-
-    return false;
-  }
-
-  return true;
-}
-
-export function assertNotBlank(
-  s: string | null | undefined,
-  camposErro: CamposErro,
-  nomeCampo: string,
-  message: string,
-): s is string {
-  if (s?.trim() === "") {
+  if (!s || (s instanceof String && s.trim() === "")) {
     camposErro[nomeCampo] = message;
 
     return false;
@@ -81,6 +60,21 @@ export function assertValidHrStr(
   message: string,
 ) {
   if (!s.match(/^(?:[0-1][0-9]|2[0-3]):[0-5][0-9]$/)) {
+    camposErro[nomeCampo] = message;
+
+    return false;
+  }
+
+  return true;
+}
+
+export function assertArrayNotNull<T>(
+  s: T[] | null | undefined,
+  camposErro: CamposErro,
+  nomeCampo: string,
+  message: string,
+): s is T[] {
+  if (!s) {
     camposErro[nomeCampo] = message;
 
     return false;

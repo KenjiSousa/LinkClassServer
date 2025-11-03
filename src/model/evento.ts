@@ -1,4 +1,5 @@
 import { EventoStatus } from "#dbTypes/eventoStatus.js";
+import { Palestrante } from "./palestrante.js";
 
 export class Evento {
   id?: number;
@@ -8,7 +9,7 @@ export class Evento {
   hrFim: string;
   logradouro: string;
   numero: string | undefined;
-  orador: string;
+  palestrantes: Palestrante[];
   tema: string;
   status: EventoStatus;
   obs: string | undefined;
@@ -20,7 +21,7 @@ export class Evento {
     hrFim: string,
     logradouro: string,
     numero: string | undefined,
-    orador: string,
+    palestrantes: Palestrante[],
     tema: string,
     status: EventoStatus,
     obs: string | undefined,
@@ -31,7 +32,7 @@ export class Evento {
     this.hrFim = hrFim;
     this.logradouro = logradouro;
     this.numero = numero;
-    this.orador = orador;
+    this.palestrantes = palestrantes;
     this.tema = tema;
     this.status = status;
     this.obs = obs;

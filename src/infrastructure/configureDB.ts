@@ -21,7 +21,9 @@ const getSchemaCount = async (): Promise<number> => {
 
 const createTables = async (): Promise<void> => {
   await createTableUsuario();
+  await createTablePalestrante();
   await createTableEvento();
+  await createTableEventoPalestrante();
   await createTablePresenca();
 };
 
@@ -37,6 +39,18 @@ async function createTableUsuario() {
   log("criada tabela usuario com sucesso");
 }
 
+async function createTablePalestrante() {
+  await execute(
+    `create table ${SCHEMA}.palestrante(` +
+      `id serial primary key,` +
+      `nome varchar(100) not null,` +
+      `descricao varchar(1000),` +
+      `dt_record timestamp default current_timestamp not null` +
+      `)`,
+  );
+  log("criada tabela palestrante com sucesso");
+}
+
 async function createTableEvento() {
   await execute(
     `create table ${SCHEMA}.evento(` +
@@ -47,7 +61,6 @@ async function createTableEvento() {
       `hr_fim time not null,` +
       `logradouro varchar(100) not null,` +
       `numero varchar(30),` +
-      `orador varchar(100) not null,` +
       `tema varchar(100) not null,` +
       `status enum('aberto', 'encerrado', 'cancelado') not null,` +
       `obs varchar(255),` +
@@ -55,6 +68,20 @@ async function createTableEvento() {
       `)`,
   );
   log("criada tabela evento com sucesso");
+}
+
+async function createTableEventoPalestrante() {
+  await execute(
+    `create table ${SCHEMA}.evento_palestrante(` +
+      `id_evento bigint unsigned not null,` +
+      `id_palestrante bigint unsigned not null,` +
+      `dt_record timestamp default current_timestamp not null,` +
+      `foreign key (id_evento) references ${SCHEMA}.evento(id),` +
+      `foreign key (id_palestrante) references ${SCHEMA}.palestrante(id),` +
+      `primary key (id_evento, id_palestrante)` +
+      `)`,
+  );
+  log("criada tabela evento_palestrante com sucesso");
 }
 
 async function createTablePresenca() {
