@@ -33,6 +33,7 @@ async function createTableUsuario() {
       `email varchar(200) primary key,` +
       `device_id varchar(40),` +
       `papel enum('aluno', 'admin') not null,` +
+      `ra varchar(8),` +
       `dt_record timestamp default current_timestamp not null` +
       `)`,
   );

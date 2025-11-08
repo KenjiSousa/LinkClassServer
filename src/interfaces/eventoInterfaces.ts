@@ -14,7 +14,7 @@ export interface EventoInsertRequestBody {
 }
 
 export interface EventoInsertRequest
-  extends Request<{}, {}, EventoInsertRequestBody, {}> {}
+  extends Request<{}, {}, EventoInsertRequestBody> {}
 
 export interface EventoSelectRequestQuery {
   nome?: string;
@@ -49,4 +49,4 @@ export interface EventoUpdateRequestBody {
 }
 
 export interface EventoUpdateRequest
-  extends Request<EventoUpdateRequestParams, {}, EventoUpdateRequestBody, {}> {}
+  extends Request<EventoUpdateRequestParams, {}, EventoUpdateRequestBody> {}

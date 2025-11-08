@@ -10,7 +10,6 @@ router.post("", async (req: LoginRequest, res) => {
   const { idToken, deviceId } = req.body;
 
   const payload = await LoginService.login(idToken, deviceId);
-  payload.exp = payload.iat + 60 * 30; // válido por 30min
   const token = jwt.sign(payload, JWT_SECRET, {});
 
   return res.json({ token });

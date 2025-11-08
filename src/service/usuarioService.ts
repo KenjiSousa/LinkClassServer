@@ -1,7 +1,9 @@
 import { ApiError } from "#error/apiError.js";
 import { DupVal } from "#error/repoError.js";
+import { CamposErro } from "#interfaces/errorInterfaces.js";
 import { Usuario } from "#model/usuario.js";
 import * as UsuarioRepo from "#repository/usuarioRepo.js";
+import { assertNotEmpty, assertTrue, validaCampos } from "#util/assertion.js";
 
 export async function getUsuarioByEmail(email: string): Promise<Usuario> {
   const usuario: Usuario | null = await UsuarioRepo.getUsuarioByEmail(email);
@@ -12,11 +14,16 @@ export async function getUsuarioByEmail(email: string): Promise<Usuario> {
   return usuario;
 }
 
-export async function getUsuarioByDeviceId(deviceId: string) {
+export async function getUsuarioByDeviceId(
+  deviceId: string,
+): Promise<Usuario | null> {
   return await UsuarioRepo.getUsuarioByDeviceId(deviceId);
 }
 
-export async function insereUsuario(email: string, deviceId: string) {
+export async function insereUsuario(
+  email: string,
+  deviceId: string,
+): Promise<void> {
   try {
     return await UsuarioRepo.insereUsuario(email, deviceId);
   } catch (err: any) {
@@ -29,4 +36,25 @@ export async function insereUsuario(email: string, deviceId: string) {
 
     throw err;
   }
+}
+
+export async function setRa(
+  email: string,
+  ra: string | undefined,
+): Promise<void> {
+  {
+    const campos: CamposErro = {};
+
+    if (assertNotEmpty(ra, campos, "ra", "ra é obrigatório")) {
+      assertTrue(ra.length === 8, campos, "ra", "RA deve ter 8 caracteres");
+    }
+
+    validaCampos(campos);
+  }
+
+  const usuario: Usuario = await getUsuarioByEmail(email);
+
+  usuario.ra = ra!;
+
+  UsuarioRepo.updateUsuario(usuario);
 }

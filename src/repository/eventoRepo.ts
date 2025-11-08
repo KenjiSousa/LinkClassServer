@@ -60,10 +60,10 @@ export const insereEvento = async (evento: Evento) => {
         evento.hrIni,
         evento.hrFim,
         evento.logradouro,
-        evento.numero,
+        evento.numero ?? null,
         evento.tema,
         evento.status,
-        evento.obs,
+        evento.obs ?? null,
       ],
     );
 
@@ -171,11 +171,11 @@ export const updateEvento = async (
         evento.hrIni,
         evento.hrFim,
         evento.logradouro,
-        evento.numero,
+        evento.numero ?? null,
         evento.tema,
         evento.status,
-        evento.obs,
-        evento.id,
+        evento.obs ?? null,
+        evento.id ?? null,
       ],
     );
 

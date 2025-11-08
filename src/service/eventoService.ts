@@ -231,7 +231,7 @@ export async function updateEvento(
     );
   }
 
-  const eventoNew = eventoOld;
+  const eventoNew = structuredClone(eventoOld);
 
   {
     const campos: CamposErro = {};

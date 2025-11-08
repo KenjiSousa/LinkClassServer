@@ -34,7 +34,7 @@ export function authenticateJWT(
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET ?? "");
 
     req.usuario = new UsuarioDTO(
-      new Usuario(decoded.email, decoded.deviceId, decoded.papel),
+      new Usuario(decoded.email, decoded.deviceId, decoded.papel, undefined),
     );
 
     next();

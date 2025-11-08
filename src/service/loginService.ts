@@ -72,7 +72,10 @@ export async function login(
   const payload: UserPayload | undefined = ticket.getPayload() as UserPayload;
 
   if (payload?.hd !== "edu.unipar.br") {
-    throw new ApiError(403, "Domínio inválido de e-mail");
+    throw new ApiError(
+      403,
+      "Só é possível realizar login com uma conta Gmail Unipar (@edu.unipar.br)",
+    );
   }
 
   const usuario = await getUsuarioByEmailAndDeviceId(payload.email!, deviceId!);

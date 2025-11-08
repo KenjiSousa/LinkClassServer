@@ -6,7 +6,7 @@ export interface PalestranteInsertRequestBody {
 }
 
 export interface PalestranteInsertRequest
-  extends Request<{}, {}, PalestranteInsertRequestBody, {}> {}
+  extends Request<{}, {}, PalestranteInsertRequestBody> {}
 
 export interface PalestranteSelectRequestQuery {
   nome?: string;
@@ -29,6 +29,5 @@ export interface PalestranteUpdateRequest
   extends Request<
     PalestranteUpdateRequestParams,
     {},
-    PalestranteUpdateRequestBody,
-    {}
+    PalestranteUpdateRequestBody
   > {}
