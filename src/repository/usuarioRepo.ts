@@ -39,7 +39,7 @@ export async function getUsuarioByDeviceId(
   );
 }
 
-export async function insereUsuario(email: string, deviceId: string) {
+export async function insereUsuario(email: string, deviceId: string | null) {
   await execute(
     `insert into ${SCHEMA}.usuario(email, device_id, papel)` +
       ` values (?, ?, 'aluno')`,

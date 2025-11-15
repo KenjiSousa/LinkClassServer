@@ -22,10 +22,10 @@ export async function getUsuarioByDeviceId(
 
 export async function insereUsuario(
   email: string,
-  deviceId: string,
+  deviceId?: string,
 ): Promise<void> {
   try {
-    return await UsuarioRepo.insereUsuario(email, deviceId);
+    return await UsuarioRepo.insereUsuario(email, deviceId ?? null);
   } catch (err: any) {
     if (err instanceof DupVal) {
       throw new ApiError(
