@@ -1,10 +1,16 @@
 Projeto para servidor em Node para o LinkClass.
 
-Para teste, deve ser iniciado um servidor local (com local-web-server, por
-exemplo), e depois compartilhado com um túnel Cloudflare, usando o comando:
+Para execução, é necessário:
 
-```shell
-cloudflared tunnel --url http://127.0.0.1:3000 --name blackpearl --hostname http://blkpearl.org/
-```
-
-Trocar a `--url` pelo endereço do servidor local.
+- Um projeto no Google Cloud Console, com client OAuth2 Web.
+    - O clientID deve ser configurado em `.env.dev`, no campo
+    `GOOGLE_WEB_CLIENT_ID`.
+- Um banco de dados MySQL
+    - Para que a aplicação possa acessar o banco, configure no arquivo
+    `.env.dev` os campos:
+        - `DB_HOST`: Endereço do banco de dados
+        - `DB_USER`: Nome do usuário
+        - `DB_PASS`: Senha
+        - `DB_SCHEMA`: Schema a ser utilizado para tabelas do LinkClass
+- Opcionalmente pode ser configurado o valor `JWT_SECRET`, o que afeta a
+geração de token para autenticação no servidor.

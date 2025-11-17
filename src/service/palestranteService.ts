@@ -10,9 +10,9 @@ import {
 } from "#interfaces/palestranteInterfaces.js";
 import { CamposErro } from "#interfaces/errorInterfaces.js";
 
-export const inserePalestrante = async (
+export async function inserePalestrante(
   body: PalestranteInsertRequestBody,
-): Promise<Palestrante> => {
+): Promise<Palestrante> {
   const { nome, descricao } = body;
 
   {
@@ -28,29 +28,29 @@ export const inserePalestrante = async (
   await PalestranteRepo.inserePalestrantes(palestrante);
 
   return palestrante;
-};
+}
 
-export const getPalestranteById = async (id: number): Promise<Palestrante> => {
+export async function getPalestranteById(id: number): Promise<Palestrante> {
   const palestrante = await PalestranteRepo.getPalestranteById(id);
 
   if (!palestrante)
     throw new ApiError(404, `Palestrante de id ${id} não encontrado`);
 
   return palestrante;
-};
+}
 
-export const getPalestrantesByIds = async (
+export async function getPalestrantesByIds(
   ids: number[],
-): Promise<Palestrante[]> => {
+): Promise<Palestrante[]> {
   const palestrantes: Palestrante[] =
     await PalestranteRepo.getPalestrantesByIds(ids);
 
   return palestrantes;
-};
+}
 
-export const consultaPalestrantes = async (
+export async function consultaPalestrantes(
   query: PalestranteSelectRequestQuery,
-): Promise<PalestranteDTO[]> => {
+): Promise<PalestranteDTO[]> {
   const { nome, descricao } = query;
 
   const palestrantes = await PalestranteRepo.consultaPalestrantes(
@@ -63,17 +63,17 @@ export const consultaPalestrantes = async (
   );
 
   return palestrantesDto;
-};
+}
 
-export const updatePalestrantes = async (
+export async function updatePalestrantes(
   id: number,
   body: PalestranteUpdateRequestBody,
-) => {
+) {
   const { nome, descricao } = body;
 
   const palestranteOld = await getPalestranteById(id);
 
-  const palestranteNew = palestranteOld;
+  const palestranteNew = structuredClone(palestranteOld);
 
   {
     const campos: CamposErro = {};
@@ -92,4 +92,4 @@ export const updatePalestrantes = async (
   palestranteNew.descricao = descricao ?? palestranteOld.descricao;
 
   return await PalestranteRepo.updatePalestrante(palestranteNew);
-};
+}

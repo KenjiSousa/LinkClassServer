@@ -7,7 +7,7 @@ export interface LoginRequestBody {
   deviceId?: string;
 }
 
-export interface LoginRequest extends Request<{}, {}, LoginRequestBody, {}> {}
+export interface LoginRequest extends Request<{}, {}, LoginRequestBody> {}
 
 export interface UserPayload extends TokenPayload {
   deviceId?: string;

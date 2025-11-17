@@ -8,7 +8,7 @@ import { UserPayload } from "#interfaces/authInterfaces.js";
 
 async function getUsuarioByEmailAndDeviceId(
   email: string,
-  deviceId: string,
+  deviceId?: string,
 ): Promise<Usuario> {
   let usuarioByEmail: Usuario | null = null;
 
@@ -20,14 +20,19 @@ async function getUsuarioByEmailAndDeviceId(
     }
   }
 
-  const usuarioByDeviceId: Usuario | null =
-    await UsuarioService.getUsuarioByDeviceId(deviceId);
+  const usuarioByDeviceId: Usuario | null = deviceId
+    ? await UsuarioService.getUsuarioByDeviceId(deviceId)
+    : null;
 
   if (!usuarioByEmail && !usuarioByDeviceId) {
     await UsuarioService.insereUsuario(email, deviceId);
 
     return await UsuarioService.getUsuarioByEmail(email);
-  } else if (usuarioByEmail && usuarioByEmail.deviceId !== deviceId) {
+  } else if (
+    deviceId &&
+    usuarioByEmail &&
+    usuarioByEmail.deviceId !== deviceId
+  ) {
     throw new ApiError(
       409,
       "Já existe outro dispositivo ligado a esta conta. Solicite a ajuda de um administrador para prosseguir.",
@@ -50,7 +55,7 @@ export async function login(
     const campos: CamposErro = {};
 
     assertNotEmpty(idToken, campos, "idToken", "idToken é obrigatório");
-    assertNotEmpty(deviceId, campos, "deviceId", "deviceId é obrigatório");
+    // assertNotEmpty(deviceId, campos, "deviceId", "deviceId é obrigatório");
 
     validaCampos(campos);
   }
@@ -72,10 +77,13 @@ export async function login(
   const payload: UserPayload | undefined = ticket.getPayload() as UserPayload;
 
   if (payload?.hd !== "edu.unipar.br") {
-    throw new ApiError(403, "Domínio inválido de e-mail");
+    throw new ApiError(
+      403,
+      "Só é possível realizar login com uma conta Gmail Unipar (@edu.unipar.br)",
+    );
   }
 
-  const usuario = await getUsuarioByEmailAndDeviceId(payload.email!, deviceId!);
+  const usuario = await getUsuarioByEmailAndDeviceId(payload.email!, deviceId);
 
   payload.deviceId = usuario.deviceId;
   payload.papel = usuario.papel;

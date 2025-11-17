@@ -14,15 +14,20 @@ export function authenticateJWT(
   res: Response,
   next: NextFunction,
 ) {
-  const authHeader = req.headers.authorization;
+  console.log(JSON.stringify(req.cookies));
+  let token: string | undefined = req.cookies.token;
 
-  if (!authHeader) {
-    return res
-      .status(401)
-      .json({ message: "Não foi encontrado header de autorização" });
+  if (!token) {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+      return res
+        .status(401)
+        .json({ message: "Não foi encontrado header de autorização" });
+    }
+
+    token = authHeader.split(" ")[1];
   }
-
-  const token = authHeader.split(" ")[1];
 
   if (!token) {
     return res
@@ -34,7 +39,7 @@ export function authenticateJWT(
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET ?? "");
 
     req.usuario = new UsuarioDTO(
-      new Usuario(decoded.email, decoded.deviceId, decoded.papel),
+      new Usuario(decoded.email, decoded.deviceId, decoded.papel, undefined),
     );
 
     next();

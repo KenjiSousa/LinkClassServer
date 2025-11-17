@@ -33,7 +33,7 @@ export class Connection {
    */
   execute<T>(
     stmt: string,
-    values: (number | string | undefined)[] = [],
+    values: (number | string | null)[] = [],
   ): Promise<T> {
     return new Promise((resolve, reject) => {
       this.connection.query(stmt, values, (err, rows: T) => {
@@ -111,7 +111,7 @@ export async function getConnection(): Promise<Connection> {
  */
 export function execute<T>(
   stmt: string,
-  values: (number | string)[] = [],
+  values: (number | string | null)[] = [],
 ): Promise<T> {
   return new Promise((resolve, reject) => {
     pool.query(stmt, values, (err, rows: T) => {

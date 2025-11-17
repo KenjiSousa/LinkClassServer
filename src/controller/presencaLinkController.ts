@@ -10,6 +10,7 @@ import {
   PresencaLinkGenerateRequest,
   PresencaLinkVerifyRequest,
 } from "#interfaces/presencaInterfaces.js";
+import { Evento } from "#model/evento.js";
 
 const router = express.Router();
 
@@ -25,7 +26,7 @@ router.get(
       return res.status(400).json({ message: "ID do evento é obrigatório" });
     }
 
-    await EventoService.getEventoById(id_evento); // Verifica se o evento existe
+    const evento: Evento = await EventoService.getEventoById(id_evento);
 
     const timestamp = Math.floor(Date.now() / 1000); // Timestamp atual em segundos
     const data = `${id_evento}:${timestamp}:${SECRET_SALT}`;
@@ -33,7 +34,7 @@ router.get(
 
     HashStore.getInstance().add(hash, id_evento, TTL_SECONDS);
 
-    return res.json({ hash });
+    return res.json({ hash, idEvento: evento.id });
   },
 );
 

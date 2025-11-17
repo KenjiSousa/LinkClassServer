@@ -32,7 +32,7 @@ export async function inserePalestrantes(palestrante: Palestrante) {
     `insert into ${SCHEMA}.palestrante(` +
       `nome, descricao)` +
       ` values (?, ?)`,
-    [palestrante.nome, palestrante.descricao],
+    [palestrante.nome, palestrante.descricao ?? null],
   );
 
   palestrante.id = result.insertId;
@@ -89,6 +89,6 @@ export async function updatePalestrante(palestrante: Palestrante) {
       ` set nome = ?,` +
       ` descricao = ?` +
       ` where id = ?`,
-    [palestrante.nome, palestrante.descricao, palestrante.id],
+    [palestrante.nome, palestrante.descricao ?? null, palestrante.id!],
   );
 }
