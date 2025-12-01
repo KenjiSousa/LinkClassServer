@@ -14,7 +14,7 @@ async function constructPresenca(rows: PresencaDB[]): Promise<Presenca | null> {
 
   const evento = await EventoService.getEventoById(rows[0].id_evento);
 
-  const presenca = new Presenca(usuario, evento);
+  const presenca = new Presenca(usuario, evento, rows[0].dt_record);
   presenca.id = rows[0].id;
 
   return presenca;
