@@ -92,3 +92,7 @@ export async function updatePalestrante(palestrante: Palestrante) {
     [palestrante.nome, palestrante.descricao ?? null, palestrante.id!],
   );
 }
+
+export async function deletePalestrante(id: number) {
+  await execute(`delete from ${SCHEMA}.palestrante` + ` where id = ?`, [id]);
+}

@@ -5,9 +5,11 @@ export class Presenca {
   id?: number;
   usuario: Usuario;
   evento: Evento;
+  dataHora?: Date;
 
-  constructor(usuario: Usuario, evento: Evento) {
+  constructor(usuario: Usuario, evento: Evento, dataHora?: Date) {
     this.usuario = usuario;
     this.evento = evento;
+    this.dataHora = dataHora;
   }
 }

@@ -10,6 +10,7 @@ export async function insertEventoPalestrante(
   idEvento: number,
   idsPalestrantes: number[],
 ): Promise<void> {
+  if (idsPalestrantes.length === 0) return;
   const values = idsPalestrantes.map(() => "(?, ?)").join(", ");
 
   await conn.execute(
@@ -21,16 +22,25 @@ export async function insertEventoPalestrante(
 export async function deleteEventoPalestrante(
   conn: Connection,
   idEvento: number,
-  idsPalestrantes: number[],
+  idsPalestrantes?: number[],
 ): Promise<void> {
-  const values = idsPalestrantes.map(() => "?").join(", ");
+  if (idsPalestrantes && idsPalestrantes.length === 0) return;
 
-  await conn.execute(
-    `delete from ${SCHEMA}.evento_palestrante` +
-      ` where id_evento = ?` +
-      ` and id_palestrante in (${values})`,
-    [idEvento, ...idsPalestrantes],
-  );
+  if (idsPalestrantes) {
+    const values = idsPalestrantes.map(() => "?").join(", ");
+
+    await conn.execute(
+      `delete from ${SCHEMA}.evento_palestrante` +
+        ` where id_evento = ?` +
+        ` and id_palestrante in (${values})`,
+      [idEvento, ...idsPalestrantes],
+    );
+  } else {
+    await conn.execute(
+      `delete from ${SCHEMA}.evento_palestrante where id_evento = ?`,
+      [idEvento],
+    );
+  }
 }
 
 export async function getPalestrantesByIdEvento(

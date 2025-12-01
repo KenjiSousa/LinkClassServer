@@ -75,13 +75,13 @@ export async function insereEvento(
     let hrFimValido = true;
 
     if (
-      assertNotEmpty(hr_ini, campos, "hr_ini", "Horário inicial é obrigatória")
+      assertNotEmpty(hr_ini, campos, "hr_ini", "Horário inicial é obrigatório")
     ) {
       assertValidHrStr(hr_ini, campos, "hr_ini", "Horário inicial inválido");
     }
 
     if (
-      assertNotEmpty(hr_fim, campos, "hr_fim", "Horário final é obrigatória")
+      assertNotEmpty(hr_fim, campos, "hr_fim", "Horário final é obrigatório")
     ) {
       hrFimValido = assertValidHrStr(
         hr_fim,
@@ -327,4 +327,21 @@ export async function updateEvento(
   eventoNew.obs = obs;
 
   return await EventoRepo.updateEvento(eventoNew, palestrantes!);
+}
+
+export async function deleteEvento(id: number): Promise<void> {
+  const eventoOld = await getEventoById(id);
+
+  const dataHoraOld = localDateTimeFromString(
+    `${dateToString(eventoOld.data)} ${eventoOld.hrIni.slice(0, 5)}`,
+  );
+
+  if (!(dataHoraOld.valueOf() >= new Date().valueOf())) {
+    throw new ApiError(
+      403,
+      "Evento não pode ser excluído depois de ter iniciado",
+    );
+  }
+
+  return await EventoRepo.deleteEvento(id);
 }

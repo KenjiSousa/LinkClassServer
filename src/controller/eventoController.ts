@@ -3,6 +3,7 @@ import * as EventoService from "#service/eventoService.js";
 import { EventoDTO } from "#dto/eventoDTO.js";
 import adminOnly from "#auth/adminOnly.js";
 import {
+  EventoDeleteRequest,
   EventoInsertRequest,
   EventoSelectRequest,
   EventoUpdateRequest,
@@ -32,6 +33,14 @@ router.put("/:id", adminOnly, async (req: EventoUpdateRequest, res) => {
   const { id } = req.params;
 
   await EventoService.updateEvento(Number(id), req.body);
+
+  return res.status(200).send();
+});
+
+router.delete("/:id", adminOnly, async (req: EventoDeleteRequest, res) => {
+  const { id } = req.params;
+
+  await EventoService.deleteEvento(Number(id));
 
   return res.status(200).send();
 });

@@ -9,7 +9,6 @@ import { Evento } from "#model/evento.js";
 import { EventoStatus } from "#dbTypes/eventoStatus.js";
 import { InsertResult } from "#interfaces/dbInterfaces.js";
 import * as EventoPalestranteRepo from "#repository/eventoPalestranteRepo.js";
-import { Palestrante } from "#model/palestrante.js";
 
 const SCHEMA = process.env.DB_SCHEMA;
 
@@ -193,6 +192,25 @@ export const updateEvento = async (
       evento.id!,
       palestrantesIdsNew.filter((id) => !palestrantesIdsOld.includes(id)),
     );
+
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.close();
+  }
+};
+
+export const deleteEvento = async (id: number): Promise<void> => {
+  const conn = await getConnection();
+
+  await conn.beginTransaction();
+
+  try {
+    await EventoPalestranteRepo.deleteEventoPalestrante(conn, id);
+
+    await conn.execute(`delete from ${SCHEMA}.evento where id = ?`, [id]);
 
     await conn.commit();
   } catch (err) {

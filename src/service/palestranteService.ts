@@ -93,3 +93,18 @@ export async function updatePalestrantes(
 
   return await PalestranteRepo.updatePalestrante(palestranteNew);
 }
+
+export async function deletePalestrantes(id: number) {
+  try {
+    await PalestranteRepo.deletePalestrante(id);
+  } catch (err: any) {
+    if (err.code === "ER_ROW_IS_REFERENCED_2") {
+      throw new ApiError(
+        409,
+        "Palestrante não pode ser excluído pois já existem outros registros que dependem deste cadastro.",
+      );
+    }
+
+    throw err;
+  }
+}

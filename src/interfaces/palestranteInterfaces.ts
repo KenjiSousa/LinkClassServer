@@ -31,3 +31,6 @@ export interface PalestranteUpdateRequest
     {},
     PalestranteUpdateRequestBody
   > {}
+
+export interface PalestranteDeleteRequest
+  extends Request<PalestranteUpdateRequestParams> {}

@@ -50,3 +50,6 @@ export interface EventoUpdateRequestBody {
 
 export interface EventoUpdateRequest
   extends Request<EventoUpdateRequestParams, {}, EventoUpdateRequestBody> {}
+
+export interface EventoDeleteRequest
+  extends Request<EventoUpdateRequestParams> {}

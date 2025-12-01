@@ -2,6 +2,7 @@ import express from "express";
 import * as PalestranteService from "#service/palestranteService.js";
 import adminOnly from "#auth/adminOnly.js";
 import {
+  PalestranteDeleteRequest,
   PalestranteInsertRequest,
   PalestranteSelectRequest,
   PalestranteUpdateRequest,
@@ -32,6 +33,14 @@ router.put("/:id", adminOnly, async (req: PalestranteUpdateRequest, res) => {
   const { id } = req.params;
 
   await PalestranteService.updatePalestrantes(Number(id), req.body);
+
+  return res.status(200).send();
+});
+
+router.delete("/:id", adminOnly, async (req: PalestranteDeleteRequest, res) => {
+  const { id } = req.params;
+
+  await PalestranteService.deletePalestrantes(Number(id));
 
   return res.status(200).send();
 });
